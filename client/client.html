@@ -6,7 +6,60 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
+  const fixString = (str) => {
+    return str.replace(/([A-Z])/g, ' $1').replace(/^./, (stri) => { return stri.toUpperCase(); });
+  }
+  const handleResponse = (xhr) => {
+    const type = xhr.getResponseHeader('content-type');
+    const statusElem = document.querySelector('#status');
+    const messageElem = document.querySelector('#message');
 
+    if(type === 'application/json') {
+      const response = JSON.parse(xhr.response);
+      messageElem.textContent = response.message;
+
+      if(response.id) {
+        statusElem.textContent = fixString(response.id);
+      }
+      else
+        statusElem.textContent = 'Success';
+    }
+    else if (type === 'text/xml') {
+      messageElem.textContent = xhr.responseXML.querySelector('message').textContent;
+      const status = xhr.responseXML.querySelector('id');
+      if(status)
+        statusElem.textContent = fixString(status.textContent);
+      else
+        statusElem.textContent = 'Success';
+    }
+  };
+
+  const makeRequest = (url, type) => {
+    console.log(`Request for ${type} to ${url}`);
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Accept', type);
+    xhr.onload = () => {
+      handleResponse(xhr);
+    };
+    xhr.send();
+  };
+
+  window.onload = () => {
+    const content = document.querySelector('#content');
+    const h1 = document.createElement('h1');
+    const p = document.createElement('p');
+    h1.id = 'status';
+    p.id = 'message';
+    content.appendChild(h1);
+    content.appendChild(p);
+
+    document.querySelector('#send').onclick = () => {
+      const pageElem = document.querySelector('#page');
+      const typeElem = document.querySelector('#type');
+      makeRequest(pageElem.options[pageElem.selectedIndex].value, typeElem.options[typeElem.selectedIndex].value);
+    };
+  };
   </script>
 </head>
 <body>
